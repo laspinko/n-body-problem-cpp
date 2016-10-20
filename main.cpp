@@ -4,7 +4,7 @@
 #include<sstream>
 #include<random>
 #include<ctime>
-#include<SDL2/SDL>
+#include<SDL2/SDL.h>
 #include"bitmap_image.hpp"
 #include"barners-hut.hpp"
 
@@ -12,7 +12,7 @@
 
 using namespace std;
 
-int width = 500,height = 500;
+const int width = 500,height = 500;
 
 void draw(vector<planet> pl, string id) {
     bitmap_image output(width,height);
@@ -20,7 +20,6 @@ void draw(vector<planet> pl, string id) {
     image_drawer draw(output);
 
     draw.pen_color(255,255,255);
-    //8draw.pen_width(1);
 
     for(int i = 0; i < pl.size(); i++) {
         if(pl[i].pos > vec(0,0) && pl[i].pos < vec(width, height) )
@@ -44,8 +43,14 @@ void gravity(planet &obj, quadtree* tree) {
     }
 }
 
-int main(){
+int ( int argc, char* args[] ){
     srand(time(0));
+
+    SDL_Window* window = NULL;
+
+    SDL_Surface* screenSurface = NULL;
+
+    if(SDL_Init( SDL_INIT_VIDEO) < 0)   cerr << "SDL could not initialize!";
 
     vector<planet> planets;
 
@@ -72,11 +77,11 @@ int main(){
         }
 
         if(_%100 == 0){
-            stringstream ss;
+            /*stringstream ss;
             ss << _/100;
             string num = ss.str();
             draw(planets,num );
-            cout<<_/100<<endl;
+            cout<<_/100<<endl;*/
         }
     }
 }
