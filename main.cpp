@@ -1,182 +1,81 @@
 #include<iostream>
 #include<vector>
+#include<cmath>
+#include<sstream>
+#include<random>
+#include<ctime>
+#include"bitmap_image.hpp"
+#include"barners-hut.hpp"
+
+
+
 using namespace std;
 
-class vec{
-public:
-    vec(double cx = 0,double cy = 0) {
-        x = cx;
-        y = cy;
-    }
-    vec(const vec& other) {
-        x = other.x;
-        y = other.y;
-    }
+int width = 500,height = 500;
 
-    vec operator+(const vec& other) {
-        return vec(x+other.x,y+other.y);
-    }
-    vec operator+=(const vec& other) {
-        x += other.x;
-        y += other.y;
-    }
-    vec operator-(const vec& other) {
-        return vec(x-other.x,y-other.y);
-    }
-    vec operator-=(const vec& other) {
-        x -= other.x;
-        y -= other.y;
-    }
-    vec operator*(double s) {
-        return vec(x*s,y*s);
-    }
-    vec operator*=(double s) {
-        x *= s;
-        y *= s;
-    }
-    vec operator/(double s) {
-        return vec(x/s,y/s);
-    }
-    vec operator/=(double s) {
-        x /= s;
-        y /= s;
+void draw(vector<planet> pl, string id) {
+    bitmap_image output(width,height);
+    output.set_all_channels(0,0,0);
+    image_drawer draw(output);
+
+    draw.pen_color(255,255,255);
+    //8draw.pen_width(1);
+
+    for(int i = 0; i < pl.size(); i++) {
+        if(pl[i].pos > vec(0,0) && pl[i].pos < vec(width, height) )
+                output.set_pixel((int)pl[i].pos.x, (int)pl[i].pos.y, 255, 255, 255);
     }
 
-    double* getX(){
-        return &x;
+    string name = "bmp outputs/output"+id+".bmp";
+    output.save_image(name);
+}
+
+void gravity(planet &obj, quadtree* tree) {
+    if((tree->leaf && !(tree->pl.pos == obj.pos) ) || tree->size / (obj.pos - tree->center).dist() < 0.5) {
+        obj.addGravity(planet(tree->center,tree->size,tree->mass));
+        return ;
+    }else{
+        if(tree->qu1)    gravity(obj, tree->q1);
+        if(tree->qu2)    gravity(obj, tree->q2);
+        if(tree->qu3)    gravity(obj, tree->q3);
+        if(tree->qu4)    gravity(obj, tree->q4);
+        return ;
     }
-    double* getY(){
-        return &y;
-    }
+}
 
-    void print() const {
-        cout<<"("<<x<<","<<y<<")";
-    }
-
-
-    double x,y;
-protected:
-private:
-};
-
-class planet {
-public:
-    planet(vec p = vec(0,0),double m = 0) {
-        pos = p;
-        mass = m;
-    }
-
-    void print() const{
-        cout<<"planet m = "<<mass<<" pos = ";
-        pos.print();
-    }
-    vec pos;
-    double mass;
-protected:
-private:
-};
-
-class quadtree {
-public:
-    quadtree(vector<planet> planets,double sx,double sy,double s) {
-        x = sx+s/2;
-        y = sy+s/2;
-
-        size = s;
-
-        mass = 0;
-
-        leaf = false;
-
-        qu1 = false;
-        qu2 = false;
-        qu3 = false;
-        qu4 = false;
-
-
-        if(planets.size() <= 1){
-            leaf = true;
-            if(planets.size() == 1){
-                pl = planets[0];
-                mass = planets[0].mass;
-            }
-        }else{
-            vector<planet> quad1,quad2,quad3,quad4;
-            for(int i = 0; i < planets.size(); i ++){
-                if(planets[i].pos.x <= x && planets[i].pos.y <= y)    quad2.push_back(planets[i]);
-                if(planets[i].pos.x > x && planets[i].pos.y <= y)    quad1.push_back(planets[i]);
-                if(planets[i].pos.x > x && planets[i].pos.y > y)    quad4.push_back(planets[i]);
-                if(planets[i].pos.x <= x && planets[i].pos.y > y)    quad3.push_back(planets[i]);
-                mass += planets[i].mass;
-            }
-            if(quad1.size() > 0){
-                q1 = new quadtree(quad1,x,sy,size/2);
-                qu1 = true;
-            }
-            if(quad2.size() > 0){
-                q2 = new quadtree(quad2,sx,sy,size/2);
-                qu2 = true;
-            }
-            if(quad3.size() > 0){
-                q3 = new quadtree(quad3,sx,y,size/2);
-                qu3 = true;
-            }
-            if(quad4.size() > 0){
-                q4 = new quadtree(quad4,x,y,size/2);
-                qu4 = true;
-            }
-        }
-    }
-
-    ~quadtree(){
-        if(qu1) delete q1;
-        if(qu2) delete q2;
-        if(qu3) delete q3;
-        if(qu4) delete q4;
-    }
-
-    void print() const{
-        if(leaf){
-            pl.print();
-        }else{
-            cout<<"(m = "<<mass<<" q1: ";
-            if(qu1) q1->print();
-            cout<<" q2: ";
-            if(qu2) q2->print();
-            cout<<" q3: ";
-            if(qu3) q3->print();
-            cout<<" q4: ";
-            if(qu4) q4->print();
-            cout<<")";
-        }
-    }
-
-    quadtree *q1;// upper right
-    bool qu1;
-    quadtree *q2;// upper left
-    bool qu2;
-    quadtree *q3;// bottom left
-    bool qu3;
-    quadtree *q4;// bottom right
-    bool qu4;
-
-    planet pl;
-    bool leaf;
-    double mass;
-    double size;
-    double x,y;
-protected:
-private:
-};
 int main(){
+    srand(time(0));
+
     vector<planet> planets;
-    planets.push_back(planet(vec(100,10),1));
-    planets.push_back(planet(vec(13,65),1));
-    planets.push_back(planet(vec(12,41),1));
-    planets.push_back(planet(vec(75,65),1));
-    planets.push_back(planet(vec(1,99),1));
 
-    quadtree q(planets,0,0,100);
+    for(int i = 0 ;i < 100; i++) {
+        planets.push_back(planet(vec(rand()%width, rand()%height), 1, 3.14));
+    }
 
-    q.print();
+
+
+    for(int _ = 0; _ <10000; _++){
+        quadtree q(planets,0,0,width);
+        for(int i = 0; i < planets.size(); i++){
+            gravity(planets[i],&q);
+        }
+        for(int i = 0; i < planets.size(); i++){
+            planets[i].updateVelocity();
+
+            if(planets[i].pos.x < 0 || planets[i].pos.x > width) {
+                planets[i].vel.x *= -1;
+            }
+            if(planets[i].pos.y < 0 || planets[i].pos.y >height) {
+                planets[i].vel.y *= -1;
+            }
+        }
+
+        if(_%100 == 0){
+            stringstream ss;
+            ss << _/100;
+            string num = ss.str();
+            draw(planets,num );
+            cout<<_/100<<endl;
+        }
+    }
 }

@@ -1,2 +1,8 @@
 *.o
 *.exe
+*.dll
+*.cbp
+*.bmp
+bin/*
+obj/*
+bmp outputs/*
