@@ -3,7 +3,7 @@
 #include<vector>
 #include<cmath>
 
-using namespace std;
+const double G = 6.674e-3;
 
 class vec{
 public:
@@ -92,7 +92,7 @@ public:
     }
 
     void print() const {
-        cout<<"("<<x<<","<<y<<")";
+        std::cout<<"("<<x<<","<<y<<")";
     }
 };
 
@@ -106,14 +106,15 @@ public:
     planet(vec p = vec(0,0),double s = 0, double m = 0) {
         pos = p;
         size = s;
+        if(m == 0)  m = s*s*3.14;
         mass = m;
         vel = vec(0,0);
     }
 
     void addGravity(const planet& other) {
-        if( (other.pos-pos).dist2() > 1) {
+        if( (other.pos-pos).dist2() > other.size + size) {
             vec dir = (other.pos - pos).normalize();
-            double scal = mass*other.mass/ (other.pos-pos).dist2() / 1000;
+            double scal = mass*other.mass/ (other.pos-pos).dist2() * G;
             vel += dir * scal;
         }
     }
@@ -123,19 +124,19 @@ public:
     }
 
     void print() const {
-        cout<<"planet m = "<<mass<<" pos = ";
+        std::cout<<"planet m = "<<mass<<" pos = ";
         pos.print();
-        cout<<" vel =";
+        std::cout<<" vel =";
         vel.print();
     }
 };
 
 class quadtree {
 public:
-    quadtree(vector<planet> planets,double sx,double sy,double s) {
+    quadtree(std::vector<planet> planets,double sx,double sy,double s) {
 
 
-        double x = center.x, y = center.y;
+        double x = sx+s/2, y = sy+s/2;
 
         size = s;
 
@@ -152,8 +153,8 @@ public:
 
         center = vec(0,0);
         for(int i = 0; i < planets.size(); i ++){
-            center += planet[i].pos * planet[i].mass;
-                mass += planets[i].mass;
+            center += planets[i].pos * planets[i].mass;
+            mass += planets[i].mass;
         }
         center /= mass;
 
@@ -164,7 +165,7 @@ public:
                 mass = planets[0].mass;
             }
         }else{
-            vector<planet> quad1,quad2,quad3,quad4;
+            std::vector<planet> quad1,quad2,quad3,quad4;
             for(int i = 0; i < planets.size(); i ++){
                 if(planets[i].pos.x <= x && planets[i].pos.y <= y)    quad2.push_back(planets[i]);
                 if(planets[i].pos.x > x && planets[i].pos.y <= y)    quad1.push_back(planets[i]);
@@ -201,15 +202,15 @@ public:
         if(leaf) {
             pl.print();
         } else {
-            cout << "(m = " << mass << " q1: ";
+            std::cout << "(m = " << mass << " q1: ";
             if(qu1) q1->print();
-            cout << " q2: ";
+            std::cout << " q2: ";
             if(qu2) q2->print();
-            cout << " q3: ";
+            std::cout << " q3: ";
             if(qu3) q3->print();
-            cout << " q4: ";
+            std::cout << " q4: ";
             if(qu4) q4->print();
-            cout <<")";
+            std::cout <<")";
         }
     }
 

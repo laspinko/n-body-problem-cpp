@@ -8,12 +8,52 @@
 #include "bitmap_image.hpp"
 #include "barners-hut.hpp"
 
-using namespace std;
+
+
 
 const int width = 500;
 const int height = 500;
-const int saveInterval = 100;
-void draw(vector<planet> pl, string id) {
+int stepsPerCall = 1;
+
+SDL_Window *window = NULL;
+
+SDL_Renderer *renderer = NULL;
+
+std::vector<planet> planets;
+
+void gravity(planet &obj, quadtree* tree);
+void draw();
+void update();
+
+void draw() {
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderClear( renderer );
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+    for(int i = 0; i < planets.size(); i ++) {
+        SDL_Rect fillRect = {planets[i].pos.x - planets[i].size, planets[i].pos.y - planets[i].size, 2 * planets[i].size, 2 * planets[i].size};
+        SDL_RenderFillRect(renderer, &fillRect);
+    }
+    SDL_RenderPresent(renderer);
+}
+
+void update() {
+    quadtree q(planets,0,0,width);
+    for(int i = 0; i < planets.size(); i++) {
+        gravity(planets[i],&q);
+    }
+    for(int i = 0; i < planets.size(); i++) {
+        planets[i].updateVelocity();
+
+        if(planets[i].pos.x < 0 || planets[i].pos.x > width) {
+            planets[i].vel.x *= -1;
+        }
+        if(planets[i].pos.y < 0 || planets[i].pos.y >height) {
+            planets[i].vel.y *= -1;
+        }
+    }
+}
+
+void draw_bmp(std::vector<planet> pl, std::string id) {
     bitmap_image output(width,height);
     output.set_all_channels(0,0,0);
     image_drawer draw(output);
@@ -26,7 +66,7 @@ void draw(vector<planet> pl, string id) {
 		}
     }
 
-    string name = "output/frame" + id + ".bmp";
+    std::string name = "output/frame" + id + ".bmp";
     output.save_image(name);
 }
 
@@ -43,46 +83,38 @@ void gravity(planet &obj, quadtree* tree) {
     }
 }
 
-int ( int argc, char* args[] ){
+int main(int argv, char** args){
     srand(time(0));
 
-    SDL_Window* window = NULL;
-
-    SDL_Surface* screenSurface = NULL;
-
-    if(SDL_Init( SDL_INIT_VIDEO) < 0)   cerr << "SDL could not initialize!";
-
-    vector<planet> planets;
-
-    for(int i = 0;i < 100;i ++) {
-        planets.push_back(planet(vec(rand()%width, rand()%height), 1, 3.14));
+    for(int i = 0;i < 300;i ++) {
+        planets.push_back(planet(vec(rand()%width, rand()%height), 1));
     }
 
-    for(int step = 0;step <10000;step ++) {
-        quadtree q(planets,0,0,width);
-        for(int i = 0; i < planets.size(); i++) {
-            gravity(planets[i],&q);
-        }
-        for(int i = 0; i < planets.size(); i++) {
-            planets[i].updateVelocity();
+    SDL_Init( SDL_INIT_VIDEO);
+    window = SDL_CreateWindow("n body", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
 
-            if(planets[i].pos.x < 0 || planets[i].pos.x > width) {
-                planets[i].vel.x *= -1;
-            }
-            if(planets[i].pos.y < 0 || planets[i].pos.y >height) {
-                planets[i].vel.y *= -1;
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+
+    bool quit = false;
+
+
+    SDL_Event e;
+    while(!quit){
+
+        if(SDL_PollEvent(&e) !=0) {
+            if(e.type == SDL_QUIT) {
+                quit = true;
             }
         }
 
-        if(step % saveInterval == 0) {
-			string name(10, '0');
-			int cp = step;
-			for(int len = 0;cp > 0;len ++) {
-				name[10 - len] = '0' + cp % 10;
-				cp /= 10;
-			}
-            draw(planets, name);
-            cout << name <<endl;
+        for(int i = 0; i < stepsPerCall; i ++) {
+            update();
         }
+
+        draw();
     }
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+
+    SDL_Quit();
 }
