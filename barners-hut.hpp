@@ -1,3 +1,4 @@
+// TODO NEEDS REFACTORING
 #include<iostream>
 #include<vector>
 #include<cmath>
@@ -6,10 +7,13 @@ using namespace std;
 
 class vec{
 public:
+    double x,y;
+
     vec(double cx = 0,double cy = 0) {
         x = cx;
         y = cy;
     }
+
     vec(const vec& other) {
         x = other.x;
         y = other.y;
@@ -18,75 +22,87 @@ public:
     vec operator+(const vec& other) const{
         return vec(x+other.x,y+other.y);
     }
+
     vec operator+=(const vec& other) {
         x += other.x;
         y += other.y;
     }
+
     vec operator-(const vec& other) const{
         return vec(x-other.x,y-other.y);
     }
+
     vec operator-=(const vec& other) {
         x -= other.x;
         y -= other.y;
     }
+
     vec operator*(double s) const{
         return vec(x*s,y*s);
     }
+
     vec operator*=(double s) {
         x *= s;
         y *= s;
     }
+
     vec operator/(double s) const{
         return vec(x/s,y/s);
     }
+
     vec operator/=(double s) {
         x /= s;
         y /= s;
     }
-    bool operator==(const vec& other) const{
+
+    bool operator==(const vec& other) const {
         return x == other.x && y == other.y;
     }
 
-    bool operator!=(const vec& other) const{
+    bool operator!=(const vec& other) const {
         return x != other.x || y != other.y;
     }
-    bool operator>(const vec& other) const{
+
+    bool operator>(const vec& other) const {
         return x > other.x && y > other.y;
     }
-    bool operator>=(const vec& other) const{
+
+    bool operator>=(const vec& other) const {
         return x >= other.x && y >= other.y;
     }
-    bool operator<(const vec& other) const{
+
+    bool operator<(const vec& other) const {
         return x < other.x && y < other.y;
     }
-    bool operator<=(const vec& other) const{
+
+    bool operator<=(const vec& other) const {
         return x <= other.x && y <= other.y;
     }
 
-    double dist() const{
+    double dist() const {
         return sqrt(x*x+y*y);
     }
 
-    double dist2() const{
+    double dist2() const {
         return x*x+y*y;
     }
 
-    vec normalize(){
+    vec normalize() {
         return (*this)/dist();
     }
 
     void print() const {
         cout<<"("<<x<<","<<y<<")";
     }
-
-
-    double x,y;
-protected:
-private:
 };
 
 class planet {
 public:
+    vec pos;
+    vec vel;
+    double size;
+    double mass;
+
     planet(vec p = vec(0,0),double s = 0, double m = 0) {
         pos = p;
         size = s;
@@ -94,11 +110,10 @@ public:
         vel = vec(0,0);
     }
 
-    void addGravity(const planet& other){
-        if( (other.pos-pos).dist2() > 1){
+    void addGravity(const planet& other) {
+        if( (other.pos-pos).dist2() > 1) {
             vec dir = (other.pos - pos).normalize();
             double scal = mass*other.mass/ (other.pos-pos).dist2() / 1000;
-
             vel += dir * scal;
         }
     }
@@ -107,21 +122,12 @@ public:
         pos += vel;
     }
 
-    void print() const{
+    void print() const {
         cout<<"planet m = "<<mass<<" pos = ";
         pos.print();
         cout<<" vel =";
         vel.print();
     }
-
-
-
-    vec pos;
-    vec vel;
-    double size;
-    double mass;
-protected:
-private:
 };
 
 class quadtree {
@@ -185,19 +191,19 @@ public:
         if(qu4) delete q4;
     }
 
-    void print() const{
-        if(leaf){
+    void print() const {
+        if(leaf) {
             pl.print();
-        }else{
-            cout<<"(m = "<<mass<<" q1: ";
+        } else {
+            cout << "(m = " << mass << " q1: ";
             if(qu1) q1->print();
-            cout<<" q2: ";
+            cout << " q2: ";
             if(qu2) q2->print();
-            cout<<" q3: ";
+            cout << " q3: ";
             if(qu3) q3->print();
-            cout<<" q4: ";
+            cout << " q4: ";
             if(qu4) q4->print();
-            cout<<")";
+            cout <<")";
         }
     }
 
@@ -215,7 +221,5 @@ public:
     double mass;
     double size;
     vec center;
-protected:
-private:
 };
 
