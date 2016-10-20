@@ -128,7 +128,6 @@ class quadtree {
 public:
     quadtree(vector<planet> planets,double sx,double sy,double s) {
 
-        center = vec(sx+s/2.0, sy+s/2.0);
 
         double x = center.x, y = center.y;
 
@@ -144,6 +143,14 @@ public:
         qu4 = false;
 
 
+
+        center = vec(0,0);
+        for(int i = 0; i < planets.size(); i ++){
+            center += planet[i].pos * planet[i].mass;
+                mass += planets[i].mass;
+        }
+        center /= mass;
+
         if(planets.size() <= 1){
             leaf = true;
             if(planets.size() == 1){
@@ -157,7 +164,6 @@ public:
                 if(planets[i].pos.x > x && planets[i].pos.y <= y)    quad1.push_back(planets[i]);
                 if(planets[i].pos.x > x && planets[i].pos.y > y)    quad4.push_back(planets[i]);
                 if(planets[i].pos.x <= x && planets[i].pos.y > y)    quad3.push_back(planets[i]);
-                mass += planets[i].mass;
             }
             if(quad1.size() > 0){
                 q1 = new quadtree(quad1,x,sy,size/2);

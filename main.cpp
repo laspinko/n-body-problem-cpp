@@ -4,6 +4,7 @@
 #include<sstream>
 #include<random>
 #include<ctime>
+#include<SDL2/SDL>
 #include"bitmap_image.hpp"
 #include"barners-hut.hpp"
 
