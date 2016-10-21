@@ -3,7 +3,7 @@
 #include<vector>
 #include<cmath>
 
-const double G = 6.674e-3;
+const double G = 6.674e-5;
 
 class vec{
 public:
@@ -124,7 +124,7 @@ public:
     }
 
     void print() const {
-        std::cout<<"planet m = "<<mass<<" pos = ";
+        std::cout<<"planet s = "<<size<<" m = "<<mass<<" pos = ";
         pos.print();
         std::cout<<" vel =";
         vel.print();

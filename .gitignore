@@ -6,3 +6,4 @@
 bin/*
 obj/*
 bmp outputs/*
+i686-w64-mingw32/*

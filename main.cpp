@@ -11,9 +11,16 @@
 
 
 
-const int width = 500;
-const int height = 500;
-int stepsPerCall = 1;
+const double width = 10000;
+const double height = 10000;
+const int window_width = 500;
+const int window_height = 500;
+
+
+double scale = std::max( window_width / width, window_height / height);
+vec translate = vec(0, 0);
+
+int stepsPerCall = 10;
 
 SDL_Window *window = NULL;
 
@@ -24,33 +31,69 @@ std::vector<planet> planets;
 void gravity(planet &obj, quadtree* tree);
 void draw();
 void update();
+void init();
+void close();
+
+void init() {
+    SDL_Init( SDL_INIT_VIDEO);
+    window = SDL_CreateWindow("n body", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, window_width, window_height, SDL_WINDOW_SHOWN);
+
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+}
+
+void close() {
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+
+    SDL_Quit();
+}
 
 void draw() {
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderClear( renderer );
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+
     for(int i = 0; i < planets.size(); i ++) {
-        SDL_Rect fillRect = {planets[i].pos.x - planets[i].size, planets[i].pos.y - planets[i].size, 2 * planets[i].size, 2 * planets[i].size};
+        vec pos = (planets[i].pos + translate) * scale + vec(window_width / 2.0, window_height / 2.0);
+        double size = planets[i].size;
+        SDL_Rect fillRect = {pos.x - size, pos.y - size, 2 * size, 2 * size};
         SDL_RenderFillRect(renderer, &fillRect);
     }
     SDL_RenderPresent(renderer);
 }
 
 void update() {
-    quadtree q(planets,0,0,width);
+    quadtree q(planets,-width ,- height ,width * 2);
     for(int i = 0; i < planets.size(); i++) {
         gravity(planets[i],&q);
     }
     for(int i = 0; i < planets.size(); i++) {
         planets[i].updateVelocity();
 
-        if(planets[i].pos.x < 0 || planets[i].pos.x > width) {
+        if(planets[i].pos.x < -width || planets[i].pos.x > width) {
             planets[i].vel.x *= -1;
         }
-        if(planets[i].pos.y < 0 || planets[i].pos.y >height) {
+        if(planets[i].pos.y < -height || planets[i].pos.y > height) {
             planets[i].vel.y *= -1;
         }
     }
+    //std::cout << stepsPerCall << std::endl;
+}
+
+planet createPlanet(vec c, double r){
+    double ang = (double)rand() / RAND_MAX * M_PI * 2;
+    double mag = (double)rand() / RAND_MAX * r;
+
+    vec pos(cos(ang) * mag, sin(ang) * mag);
+    pos += c;
+
+
+    planet p(pos, 1);
+
+    //p.vel = vec(-sin(ang),cos(ang));
+    //p.vel *= sqrt(pl.mass*G/mag);
+
+    return p;
 }
 
 void draw_bmp(std::vector<planet> pl, std::string id) {
@@ -86,14 +129,13 @@ void gravity(planet &obj, quadtree* tree) {
 int main(int argv, char** args){
     srand(time(0));
 
-    for(int i = 0;i < 300;i ++) {
-        planets.push_back(planet(vec(rand()%width, rand()%height), 1));
+    for(int i = 0;i < 100;i ++) {
+        planets.push_back(createPlanet(vec(0,0), 500));
     }
 
-    SDL_Init( SDL_INIT_VIDEO);
-    window = SDL_CreateWindow("n body", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
+    init();
 
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    std::cout << "Press:" << std::endl << "Z and X to zoom in and out" << std::endl << "WASD to navigate";
 
     bool quit = false;
 
@@ -101,9 +143,32 @@ int main(int argv, char** args){
     SDL_Event e;
     while(!quit){
 
-        if(SDL_PollEvent(&e) !=0) {
+        while(SDL_PollEvent(&e) !=0) {
             if(e.type == SDL_QUIT) {
                 quit = true;
+            }
+            if(e.type == SDL_KEYDOWN) {
+                switch (e.key.keysym.sym) {
+                case SDLK_z:
+                    scale /= 0.9;
+                    break;
+                case SDLK_x:
+                    scale *= 0.9;
+                    break;
+                case SDLK_w:
+                    translate.y += 10 / scale;
+                    break;
+                case SDLK_a:
+                    translate.x += 10 / scale;
+                    break;
+                case SDLK_s:
+                    translate.y -= 10 / scale;
+                    break;
+                case SDLK_d:
+                    translate.x -= 10 / scale;
+                    break;
+
+                }
             }
         }
 
@@ -113,8 +178,6 @@ int main(int argv, char** args){
 
         draw();
     }
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
 
-    SDL_Quit();
+    close();
 }
