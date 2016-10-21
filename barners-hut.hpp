@@ -111,16 +111,16 @@ public:
         vel = vec(0,0);
     }
 
-    void addGravity(const planet& other) {
+    void addGravity(const planet& other, double time) {
         if( (other.pos-pos).dist2() > other.size + size) {
             vec dir = (other.pos - pos).normalize();
             double scal = mass*other.mass/ (other.pos-pos).dist2() * G;
-            vel += dir * scal;
+            vel += dir * scal * time;
         }
     }
 
-    void updateVelocity() {
-        pos += vel;
+    void updateVelocity(double time = 1) {
+        pos += vel * time;
     }
 
     void print() const {

@@ -17,10 +17,13 @@ const int window_width = 500;
 const int window_height = 500;
 
 
+double timePerMove = 1;
+
+
 double scale = std::max( window_width / width, window_height / height);
 vec translate = vec(0, 0);
 
-int stepsPerCall = 10;
+int stepsPerCall = 1;
 
 SDL_Window *window = NULL;
 
@@ -49,15 +52,26 @@ void close() {
 }
 
 void draw() {
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderClear( renderer );
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+    SDL_RenderClear( renderer );
+
+    double pixel_map[window_width][window_height] = {0.0};
+
+    double occupacy = std::min(1 / (scale * scale), 32.0);
 
     for(int i = 0; i < planets.size(); i ++) {
         vec pos = (planets[i].pos + translate) * scale + vec(window_width / 2.0, window_height / 2.0);
-        double size = planets[i].size;
-        SDL_Rect fillRect = {pos.x - size, pos.y - size, 2 * size, 2 * size};
-        SDL_RenderFillRect(renderer, &fillRect);
+        if(pos > vec(0,0) && pos < vec(window_width, window_height) )   pixel_map[(int)(pos.x)][(int)(pos.y)] += planets[i].mass / occupacy;
+    }
+
+    for(int x = 0; x < window_width; x ++){
+        for(int y = 0; y < window_width; y ++){
+            if(pixel_map[x][y] != 0) {
+                int c = std::min((int)(pixel_map[x][y] * 255), 255);
+                SDL_SetRenderDrawColor(renderer, c, c, c, c);
+                SDL_RenderDrawPoint(renderer, x, y);
+            }
+        }
     }
     SDL_RenderPresent(renderer);
 }
@@ -68,7 +82,7 @@ void update() {
         gravity(planets[i],&q);
     }
     for(int i = 0; i < planets.size(); i++) {
-        planets[i].updateVelocity();
+        planets[i].updateVelocity(timePerMove);
 
         if(planets[i].pos.x < -width || planets[i].pos.x > width) {
             planets[i].vel.x *= -1;
@@ -77,7 +91,6 @@ void update() {
             planets[i].vel.y *= -1;
         }
     }
-    //std::cout << stepsPerCall << std::endl;
 }
 
 planet createPlanet(vec c, double r){
@@ -90,8 +103,8 @@ planet createPlanet(vec c, double r){
 
     planet p(pos, 1);
 
-    //p.vel = vec(-sin(ang),cos(ang));
-    //p.vel *= sqrt(pl.mass*G/mag);
+    /*p.vel.x = -sin(ang) * G;
+    p.vel.y = cos(ang) * G;*/
 
     return p;
 }
@@ -115,7 +128,7 @@ void draw_bmp(std::vector<planet> pl, std::string id) {
 
 void gravity(planet &obj, quadtree* tree) {
     if((tree->leaf && !(tree->pl.pos == obj.pos) ) || tree->size / (obj.pos - tree->center).dist() < 0.5) {
-        obj.addGravity(planet(tree->center,tree->size,tree->mass));
+        obj.addGravity(planet(tree->center,tree->size,tree->mass), timePerMove);
         return;
     } else {
         if(tree->qu1) gravity(obj, tree->q1);
@@ -129,13 +142,13 @@ void gravity(planet &obj, quadtree* tree) {
 int main(int argv, char** args){
     srand(time(0));
 
-    for(int i = 0;i < 100;i ++) {
+    for(int i = 0;i < 1000;i ++) {
         planets.push_back(createPlanet(vec(0,0), 500));
     }
 
     init();
 
-    std::cout << "Press:" << std::endl << "Z and X to zoom in and out" << std::endl << "WASD to navigate";
+    std::cout << "Press:" << std::endl << "Z and X to zoom in and out" << std::endl << "WASD to navigate" << std::endl << "F and N for fast and normal speed";
 
     bool quit = false;
 
@@ -166,6 +179,14 @@ int main(int argv, char** args){
                     break;
                 case SDLK_d:
                     translate.x -= 10 / scale;
+                    break;
+                case SDLK_f:
+                    timePerMove = 10;
+                    stepsPerCall = 10;
+                    break;
+                case SDLK_n:
+                    timePerMove = 1;
+                    stepsPerCall = 1;
                     break;
 
                 }
