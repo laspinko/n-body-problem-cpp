@@ -30,10 +30,10 @@ void add_to_file() {
     saved_states ++;
     std::cout << saved_states << std::endl;
     save_file.seekp(start_of_save_file);
-    save_file.write(reinterpret_cast<char*>(&saved_states),sizeof(int));
+    binary_write(save_file,saved_states);
     save_file.seekp(0,std::ios::end);
     int size = planets.size();
-    save_file.write(reinterpret_cast<char*>(&size),sizeof(int));
+    binary_write(save_file,size);
     for(int i = 0 ; i < size; i ++) {
         planets[i].saveTo(save_file);
     }
@@ -109,7 +109,12 @@ int main(int argv, char** args){
         planets.push_back(createPlanet(vec(0,0), 500));
     }
 
-    save_file.open("simulation.nbp", std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
+    std::string file_name;
+
+    std::cout << "Save file name: ";
+    std::cin >> file_name;
+
+    save_file.open(file_name, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
     std::string message = "https://github.com/laspinko/n-body-problem-cpp ";
     save_file.write(message.c_str(), message.length());
     start_of_save_file = save_file.tellp();

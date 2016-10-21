@@ -24,10 +24,10 @@ void read_from_file() {
     int states;
     std::string message = "https://github.com/laspinko/n-body-problem-cpp ";
     load_file.seekg(message.size(),std::ios_base::beg);
-    load_file.read(reinterpret_cast<char*>(&states),sizeof(int));
+    binary_read(load_file,states);
     for(int i = 0; i < states; i ++) {
         int pl;
-        load_file.read(reinterpret_cast<char*>(&pl),sizeof(int));
+        binary_read(load_file,pl);
         std::vector<planet> planets;
         for(int j = 0; j < pl; j ++){
             planet temp;
@@ -39,13 +39,13 @@ void read_from_file() {
     std::cout << "Loaded "<< planets_states.size() << " states" << std::endl;
 }
 
-void init() {
+void init(std::string file_name = "simulation.nbp") {
     SDL_Init( SDL_INIT_VIDEO);
     window = SDL_CreateWindow("n body", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, window_width, window_height, SDL_WINDOW_SHOWN);
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-    load_file.open("simulation.nbp", std::ios_base::in | std::ios_base::binary);
+    load_file.open(file_name, std::ios_base::in | std::ios_base::binary);
 }
 
 void close() {
@@ -84,9 +84,13 @@ void draw(std::vector<planet> planets) {
 
 
 int main(int argv, char** args){
+    std::string file_name;
+    std::cout << "Load file name: ";
+    std::cin >> file_name;
 
-    init();
+    init(file_name);
     read_from_file();
+
 
     std::cout << "Press:" << std::endl << "Z and X to zoom in and out" << std::endl << "WASD to navigate";
 
