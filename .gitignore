@@ -3,6 +3,7 @@
 *.dll
 *.cbp
 *.bmp
+*.nbp
 bin/*
 obj/*
 bmp outputs/*
