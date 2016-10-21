@@ -2,8 +2,18 @@
 #include<iostream>
 #include<vector>
 #include<cmath>
+#include <fstream>
 
 const double G = 6.674e-5;
+
+template<typename T>
+std::ostream & binary_write(std::ostream& stream, T& value){
+    return stream.write(reinterpret_cast<char*>(&value), sizeof(T));
+}
+template<typename T>
+std::istream & binary_read(std::istream& stream, T& value){
+    return stream.read(reinterpret_cast<char*>(&value), sizeof(T));
+}
 
 class vec{
 public:
@@ -94,6 +104,15 @@ public:
     void print() const {
         std::cout<<"("<<x<<","<<y<<")";
     }
+
+    void saveTo(std::ostream& out) {
+        binary_write(out,x);
+        binary_write(out,y);
+    }
+    void loadFrom(std::istream& in) {
+        binary_read(in,x);
+        binary_read(in,y);
+    }
 };
 
 class planet {
@@ -128,6 +147,19 @@ public:
         pos.print();
         std::cout<<" vel =";
         vel.print();
+    }
+
+    void saveTo(std::ostream& out) {
+        pos.saveTo(out);
+        vel.saveTo(out);
+        binary_write(out, size);
+        binary_write(out, mass);
+    }
+    void loadFrom(std::istream& in) {
+        pos.loadFrom(in);
+        vel.loadFrom(in);
+        binary_read(in, size);
+        binary_read(in, mass);
     }
 };
 

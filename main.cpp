@@ -4,7 +4,8 @@
 #include <sstream>
 #include <random>
 #include <ctime>
-#include<SDL2/SDL.h>
+#include <fstream>
+#include <SDL2/SDL.h>
 #include "bitmap_image.hpp"
 #include "barners-hut.hpp"
 
@@ -29,6 +30,12 @@ SDL_Window *window = NULL;
 
 SDL_Renderer *renderer = NULL;
 
+std::ofstream save_file;
+std::streampos start_of_save_file;
+int saved_states;
+
+std::ifstream load_file;
+
 std::vector<planet> planets;
 
 void gravity(planet &obj, quadtree* tree);
@@ -36,15 +43,58 @@ void draw();
 void update();
 void init();
 void close();
+void add_to_file();
+
+
+void add_to_file() {
+    save_file.seekp(start_of_save_file);
+    saved_states ++;
+    save_file.write(reinterpret_cast<char*>(&saved_states),sizeof(int));
+    save_file.seekp(0,std::ios::end);
+    int size = planets.size();
+    save_file.write(reinterpret_cast<char*>(&size),sizeof(int));
+    for(int i = 0 ; i < size; i ++) {
+        planets[i].saveTo(save_file);
+    }
+}
+void read_from_file() {
+    int states;
+    std::string message = "https://github.com/laspinko/n-body-problem-cpp ";
+    load_file.seekg(message.size(),std::ios_base::beg);
+    load_file.read(reinterpret_cast<char*>(&states),sizeof(int));
+    std::cout<<states;
+    for(int i = 0; i < states; i ++) {
+        int pl;
+        load_file.read(reinterpret_cast<char*>(&pl),sizeof(int));
+        for(int j = 0; j < pl; j ++){
+            planet temp;
+            temp.loadFrom(load_file);
+            planets.push_back(temp);
+        }
+    }
+}
 
 void init() {
     SDL_Init( SDL_INIT_VIDEO);
     window = SDL_CreateWindow("n body", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, window_width, window_height, SDL_WINDOW_SHOWN);
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+
+    /*save_file.open("simulation.nbp", std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
+    std::string message = "https://github.com/laspinko/n-body-problem-cpp ";
+    save_file.write(message.c_str(), message.length());
+    start_of_save_file = save_file.tellp();
+    saved_states = 0;
+    save_file.write(reinterpret_cast<char*>(&saved_states),sizeof(int));*/
+
+    load_file.open("simulation.nbp", std::ios_base::in | std::ios_base::binary);
 }
 
 void close() {
+    load_file.close();
+
+    save_file.close();
+
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
 
@@ -142,11 +192,14 @@ void gravity(planet &obj, quadtree* tree) {
 int main(int argv, char** args){
     srand(time(0));
 
-    for(int i = 0;i < 1000;i ++) {
+    /*for(int i = 0;i < 5;i ++) {
         planets.push_back(createPlanet(vec(0,0), 500));
-    }
+    }*/
 
     init();
+
+    //add_to_file();
+    read_from_file();
 
     std::cout << "Press:" << std::endl << "Z and X to zoom in and out" << std::endl << "WASD to navigate" << std::endl << "F and N for fast and normal speed";
 
