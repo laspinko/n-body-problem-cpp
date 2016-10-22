@@ -104,21 +104,30 @@ void gravity(planet &obj, quadtree* tree) {
 
 int main(int argv, char** args){
     srand(time(0));
-
-    for(int i = 0;i < 500;i ++) {
-        planets.push_back(createPlanet(vec(0,0), 500));
-    }
-
     std::string file_name;
-
     std::cout << "Save file name: ";
     std::cin >> file_name;
+
+    int pl_count;
+    std::cout << "Planet count: ";
+    std::cin >> pl_count;
+
+    int sp_range;
+    std::cout << "Spawn range: ";
+    std::cin >> sp_range;
 
     save_file.open(file_name, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
     std::string message = "https://github.com/laspinko/n-body-problem-cpp ";
     save_file.write(message.c_str(), message.length());
     start_of_save_file = save_file.tellp();
     saved_states = 0;
+
+
+
+    for(int i = 0;i < pl_count;i ++) {
+        planets.push_back(createPlanet(vec(0,0), sp_range));
+    }
+
 
     while(true){
         add_to_file();
