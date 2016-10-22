@@ -4,6 +4,7 @@
 *.cbp
 *.bmp
 *.nbp
+*.hnbp
 bin/*
 obj/*
 bmp outputs/*

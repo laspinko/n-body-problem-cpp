@@ -16,36 +16,57 @@ SDL_Window *window = NULL;
 
 SDL_Renderer *renderer = NULL;
 
-std::ifstream load_file;
+std::fstream load_file;
+std::string message = "https://github.com/laspinko/n-body-problem-cpp";
 
-std::vector<std::vector<planet> > planets_states;
+std::vector<int> frames;
+std::vector<planet> planets;
 
-void read_from_file() {
-    int states;
-    std::string message = "https://github.com/laspinko/n-body-problem-cpp ";
-    load_file.seekg(message.size(),std::ios_base::beg);
-    binary_read(load_file,states);
-    for(int i = 0; i < states; i ++) {
-        int pl;
-        binary_read(load_file,pl);
-        std::vector<planet> planets;
-        for(int j = 0; j < pl; j ++){
-            planet temp;
-            temp.loadFrom(load_file);
-            planets.push_back(temp);
-        }
-        planets_states.push_back(planets);
+void init(std::string);
+void loadFiles(std::string);
+void readFromFile(int i);
+void draw(int i);
+void close();
+
+void readFromFile(int i) {
+    load_file.seekg(frames[i]);
+    int pl;
+    binary_read(load_file,pl);
+    planets.clear();
+    planets.reserve(pl);
+    for(int j = 0; j < pl; j ++){
+        planet temp;
+        temp.loadFrom(load_file);
+        planets.push_back(temp);
     }
-    std::cout << "Loaded "<< planets_states.size() << " states" << std::endl;
 }
 
-void init(std::string file_name = "simulation.nbp") {
+void init(std::string file_name) {
     SDL_Init( SDL_INIT_VIDEO);
     window = SDL_CreateWindow("n body", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, window_width, window_height, SDL_WINDOW_SHOWN);
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-    load_file.open(file_name, std::ios_base::in | std::ios_base::binary);
+    loadFiles(file_name);
+}
+
+void loadFiles(std::string file_name){
+    std::fstream h_load_file;
+
+    load_file.open(file_name + ".nbp", std::ios_base::in | std::ios_base::binary);
+    h_load_file.open(file_name + ".hnbp", std::ios_base::in | std::ios_base::binary);
+
+    h_load_file.seekp(message.size());
+    int num_states;
+    binary_read(h_load_file, num_states);
+    frames.reserve(num_states);
+    for(int i = 0; i < num_states; i ++){
+        int temp;
+        binary_read(h_load_file, temp);
+        frames.push_back(temp);
+    }
+
+    h_load_file.close();
 }
 
 void close() {
@@ -57,7 +78,9 @@ void close() {
     SDL_Quit();
 }
 
-void draw(std::vector<planet> planets) {
+void draw(int i) {
+    readFromFile(i);
+
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
     SDL_RenderClear( renderer );
 
@@ -89,7 +112,6 @@ int main(int argv, char** args){
     std::cin >> file_name;
 
     init(file_name);
-    read_from_file();
 
 
     std::cout << "Press:" << std::endl << "Z and X to zoom in and out" << std::endl << "WASD to navigate";
@@ -130,8 +152,8 @@ int main(int argv, char** args){
                 }
             }
         }
-        draw(planets_states[time%planets_states.size()]);
-
+        draw(time%frames.size());
+        //SDL_Delay(10);
         time ++;
     }
     close();

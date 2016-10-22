@@ -165,12 +165,13 @@ public:
 
 class quadtree {
 public:
-    quadtree(std::vector<planet> planets,double sx,double sy,double s) {
+    quadtree(std::vector<planet> planets,double sx,double sy,double w, double h) {
 
 
-        double x = sx+s/2, y = sy+s/2;
+        double x = sx+w/2, y = sy+h/2;
 
-        size = s;
+        width = w;
+        height = h;
 
         mass = 0;
 
@@ -205,19 +206,19 @@ public:
                 if(planets[i].pos.x <= x && planets[i].pos.y > y)    quad3.push_back(planets[i]);
             }
             if(quad1.size() > 0){
-                q1 = new quadtree(quad1,x,sy,size/2);
+                q1 = new quadtree(quad1, x, sy, w / 2, h / 2);
                 qu1 = true;
             }
             if(quad2.size() > 0){
-                q2 = new quadtree(quad2,sx,sy,size/2);
+                q2 = new quadtree(quad2, sx, sy, w / 2, h / 2);
                 qu2 = true;
             }
             if(quad3.size() > 0){
-                q3 = new quadtree(quad3,sx,y,size/2);
+                q3 = new quadtree(quad3, sx, y, w / 2, h / 2);
                 qu3 = true;
             }
             if(quad4.size() > 0){
-                q4 = new quadtree(quad4,x,y,size/2);
+                q4 = new quadtree(quad4, x, y, w / 2, h / 2);
                 qu4 = true;
             }
         }
@@ -258,7 +259,8 @@ public:
     planet pl;
     bool leaf;
     double mass;
-    double size;
+    double width;
+    double height;
     vec center;
 };
 

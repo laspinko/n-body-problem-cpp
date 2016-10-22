@@ -4,7 +4,6 @@
 #include <random>
 #include <ctime>
 #include <fstream>
-#include "bitmap_image.hpp"
 #include "barners-hut.hpp"
 
 
@@ -15,32 +14,80 @@ const double height = 10000;
 
 double timePerMove = 1;
 
-std::ofstream save_file;
-std::streampos start_of_save_file;
+std::fstream save_file;
+std::fstream h_save_file;
 int saved_states;
+std::string message = "https://github.com/laspinko/n-body-problem-cpp";
 
 std::vector<planet> planets;
 
 void gravity(planet &obj, quadtree* tree);
 void update();
-void add_to_file();
+void addToFile();
+
+void loadFromFile(std::string file_name){
+    std::fstream h_load_file;
+
+    h_load_file.open(file_name + ".hnbp", std::ios_base::in | std::ios_base::binary);
+
+    h_load_file.seekp(message.size());
+    binary_read(h_load_file, saved_states);
+    int last;
+    h_load_file.seekg((saved_states - 1) * sizeof(int), std::ios_base::cur);
+    binary_read(h_load_file, last);
+
+    h_load_file.close();
+
+    std::fstream load_file;
+    load_file.open(file_name + ".nbp", std::ios_base::in | std::ios_base::binary);
 
 
-void add_to_file() {
-    saved_states ++;
-    std::cout << saved_states << std::endl;
-    save_file.seekp(start_of_save_file);
-    binary_write(save_file,saved_states);
-    save_file.seekp(0,std::ios::end);
+    load_file.seekg(last);
+    int pl;
+    binary_read(load_file,pl);
+    planets.clear();
+    planets.reserve(pl);
+    for(int j = 0; j < pl; j ++){
+        planet temp;
+        temp.loadFrom(load_file);
+        planets.push_back(temp);
+    }
+
+    load_file.close();
+}
+
+void addToFile() {
+    int start_loc = save_file.tellp();
+
     int size = planets.size();
     binary_write(save_file,size);
     for(int i = 0 ; i < size; i ++) {
         planets[i].saveTo(save_file);
     }
+
+
+    saved_states ++;
+    h_save_file.seekp(message.size());
+    binary_write(h_save_file, saved_states);
+    h_save_file.seekp(0,std::ios_base::end);
+    binary_write(h_save_file, start_loc);
+
+    std::cout << "Step " << saved_states << std::endl;
 }
 
 void update() {
-    quadtree q(planets,-width ,- height ,width * 2);
+
+    double minx = width, miny = height, maxx = -width, maxy = - height;
+
+    for(int i = 0; i < planets.size(); i++) {
+        if(minx > planets[i].pos.x) minx = planets[i].pos.x;
+        if(maxx < planets[i].pos.x) maxx = planets[i].pos.x;
+        if(miny > planets[i].pos.y) miny = planets[i].pos.y;
+        if(maxy < planets[i].pos.y) maxy = planets[i].pos.y;
+    }
+
+    //std::cout << minx << "-" << maxx << "," << miny << "-" << maxy << std::endl;
+    quadtree q(planets,minx ,miny , maxx - minx, maxy - miny);
     for(int i = 0; i < planets.size(); i++) {
         gravity(planets[i],&q);
     }
@@ -72,26 +119,9 @@ planet createPlanet(vec c, double r){
     return p;
 }
 
-void draw_bmp(std::vector<planet> pl, std::string id) {
-    bitmap_image output(width,height);
-    output.set_all_channels(0,0,0);
-    image_drawer draw(output);
-
-    draw.pen_color(255,255,255);
-
-    for(int i = 0;i < pl.size();i ++) {
-		if(pl[i].pos > vec(0,0) && pl[i].pos < vec(width, height)) {
-			output.set_pixel((int)pl[i].pos.x, (int)pl[i].pos.y, 255, 255, 255);
-		}
-    }
-
-    std::string name = "output/frame" + id + ".bmp";
-    output.save_image(name);
-}
-
 void gravity(planet &obj, quadtree* tree) {
-    if((tree->leaf && !(tree->pl.pos == obj.pos) ) || tree->size / (obj.pos - tree->center).dist() < 0.5) {
-        obj.addGravity(planet(tree->center,tree->size,tree->mass), timePerMove);
+    if((tree->leaf && !(tree->pl.pos == obj.pos) ) || std::max(tree->width, tree->height) / (obj.pos - tree->center).dist() < 0.5) {
+        obj.addGravity(planet(tree->center, 0,tree->mass), timePerMove);
         return;
     } else {
         if(tree->qu1) gravity(obj, tree->q1);
@@ -108,31 +138,54 @@ int main(int argv, char** args){
     std::cout << "Save file name: ";
     std::cin >> file_name;
 
-    int pl_count;
-    std::cout << "Planet count: ";
-    std::cin >> pl_count;
+    char cont;
+    do{
+        std::cout << "Continue save file (y/n): ";
+        std::cin >> cont;
+    }while(cont!='y' && cont!='n');
 
-    int sp_range;
-    std::cout << "Spawn range: ";
-    std::cin >> sp_range;
+    if(cont == 'n'){
+        int pl_count;
+        std::cout << "Planet count: ";
+        std::cin >> pl_count;
 
-    save_file.open(file_name, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
-    std::string message = "https://github.com/laspinko/n-body-problem-cpp ";
-    save_file.write(message.c_str(), message.length());
-    start_of_save_file = save_file.tellp();
-    saved_states = 0;
+        int sp_range;
+        std::cout << "Spawn range: ";
+        std::cin >> sp_range;
 
+        for(int i = 0;i < pl_count;i ++) {
+            planets.push_back(createPlanet(vec(0,0), sp_range));
+        }
+        save_file.open(file_name + ".nbp", std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
+        save_file.write(message.c_str(), message.length());
 
+        h_save_file.open(file_name + ".hnbp", std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
+        h_save_file.write(message.c_str(), message.length());
 
-    for(int i = 0;i < pl_count;i ++) {
-        planets.push_back(createPlanet(vec(0,0), sp_range));
+        saved_states = 0;
+
+    }else{
+        loadFromFile(file_name);
+        save_file.open(file_name + ".nbp",std::ios_base::in | std::ios_base::out | std::ios_base::ate | std::ios_base::binary);
+        save_file.seekp(0, std::ios_base::end);
+
+        h_save_file.open(file_name + ".hnbp", std::ios_base::in | std::ios_base::out | std::ios_base::ate | std::ios_base::binary);
+        h_save_file.seekp(0, std::ios_base::end);
+
+        std::cout << "Starting from " << saved_states << std::endl;
     }
 
+    int steps_left = 1;
 
-    while(true){
-        add_to_file();
-        update();
-    }
+    do{
+        std::cout << "Run the simulation for (0 to terminate): ";
+        std::cin >> steps_left;
+        for(int i = 0; i < steps_left; i++){
+            update();
+            addToFile();
+        }
+    }while(steps_left > 0);
 
+    h_save_file.close();
     save_file.close();
 }
